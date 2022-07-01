@@ -1,25 +1,74 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import CheckBoard from './components/CheckBoard';
+import History from './components/History';
+import StatusMessage from './components/StatusMessage';
+import { calculateWinner } from './helper';
 
-function App() {
+import './styles/style.scss';
+
+const NEW_GAME = [{ board: Array(9).fill(null), isXNext: true }];
+
+const App = () => {
+  const [history, setHistory] = useState(NEW_GAME);
+  const [currentMove, setCurrentMove] = useState(0);
+  const current = history[currentMove];
+
+  const { winner, winningSquares } = calculateWinner(current.board);
+
+  const handleSquareClick = position => {
+    if (current.board[position] || winner) {
+      return;
+    }
+
+    setHistory(prev => {
+      const last = prev[prev.length - 1];
+
+      const newBoard = last.board.map((square, pos) => {
+        if (pos === position) {
+          return last.isXNext ? 'X' : 'O';
+        }
+
+        return square;
+      });
+
+      return prev.concat({ board: newBoard, isXNext: !last.isXNext });
+    });
+
+    setCurrentMove(prev => prev + 1);
+  };
+
+  const moveTo = move => {
+    setCurrentMove(move);
+  };
+
+  const onNewGame = () => {
+    setHistory(NEW_GAME);
+    setCurrentMove(0);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app">
+      <h1>
+        TIC <span className="text-green">TAC</span> TOE
+      </h1>
+      <StatusMessage winner={winner} current={current} />
+      <CheckBoard
+        board={current.board}
+        handleSquareClick={handleSquareClick}
+        winningSquares={winningSquares}
+      />
+      <button
+        type="button"
+        onClick={onNewGame}
+        className={`btn-reset ${winner ? 'active' : ''}`}
+      >
+         New Game
+      </button>
+      <h2 style={{ fontWeight: 'normal' }}>Recent Game History</h2>
+      <History history={history} moveTo={moveTo} currentMove={currentMove} />
+      <div className="bg-balls" />
     </div>
   );
-}
+};
 
 export default App;
